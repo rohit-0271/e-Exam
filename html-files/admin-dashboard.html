@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        small {
+            color: #FF914D;
+        }
+        a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 pt-5 pb-4">
+
+    <h1 class="text-center">
+        Welcome to <strong><span style="color: #FF914D">e</span><span style="color: #38B6FF">-Exams</span></strong>
+    </h1>
+    <br>
+    <hr>
+    <br>
+    <div class="row">
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/admin">Admins</a>
+                </h6>
+                <hr>
+                <div id="Admins"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/course">Courses</a>
+                </h6>
+                <hr>
+                <div id="Courses"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/subject">Subjects</a>
+                </h6>
+                <hr>
+                <div id="Subjects"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/instructor">Instructors</a>
+                </h6>
+                <hr>
+                <div id="Instructors"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/student">Students</a>
+                </h6>
+                <hr>
+                <div id="Students"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="alert alert-info shadow">
+                <h6 class="label">
+                    <a href="/admin-results">Results</a>
+                </h6>
+                <hr>
+                <div id="Exams"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    window.addEventListener('load', () => {
+        fetchTotalCounts()
+    })
+
+    function fetchTotalCounts() {
+        fetch('/get-total-counts').then(res => res.json()).then(data => renderData(data))
+    }
+
+    function renderData(data) {
+        let {error, message, rows} = data
+        if (!error) {
+            let {totalAdmins, totalCourses, totalExams, totalInstructors, totalStudents, totalSubjects} = rows
+            document.getElementById('Admins').innerText = totalAdmins
+            document.getElementById('Courses').innerText = totalCourses
+            document.getElementById('Subjects').innerText = totalSubjects
+            document.getElementById('Instructors').innerText = totalInstructors
+            document.getElementById('Exams').innerText = totalExams
+            document.getElementById('Students').innerText = totalStudents
+        }
+    }
+</script>
+
+</body>
+</html>

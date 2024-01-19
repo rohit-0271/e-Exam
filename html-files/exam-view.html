@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>View Exams</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .label {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        textarea[disabled] {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        form label, b {
+            color: #0828A3;
+            font-weight: 500;
+        }
+
+        .questions-row {
+            background: #e3e3e37d;
+            border-radius: 10px;
+        }
+
+        .questions-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-5">
+
+    <div class="row">
+
+        <div class="col-md-3">
+            <div class="mb-4 alert alert-info shadow">
+                <span class="label">Course</span>
+                <h5 id="courseName"><i class="fa fa-spinner"></i></h5>
+            </div>
+
+            <div class="alert alert-primary shadow">
+                <span class="label">Subjects</span>
+                <div id="subjectsRadioButton"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="alert alert-light shadow">
+                <div class="row">
+                    <div class="col-7">
+                        <h5 class="heading">All Exams</h5>
+                    </div>
+
+                    <div class="col-5 text-end">
+                        <a href="/exams" class="btn btn-primary">Set New Exam</a>
+                    </div>
+                </div>
+                <hr>
+                <div id="dynamicExamsData">
+                    <div class="text-center">
+                        <i class="fa fa-spinner fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ASSIGN SUBJECT MODAL -->
+<div class="modal fade" id="subjectsModal">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="heading" id="examTitle"></h5>
+                    <small>(Assign Subject)</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="subjectsForm">
+                    <div class="mb-3">
+                        <label for="subjectsOption">Select Subject</label>
+                        <select data-rule-required="true" name="subjectsOption" id="subjectsOption"
+                                class="form-control"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="numberOfQuestion">Total Number of Questions</label>
+                        <input type="text" data-rule-required="true" data-rule-number="true" placeholder="e.g. 10"
+                               name="numberOfQuestion" id="numberOfQuestion"
+                               maxlength="2" class="form-control">
+                    </div>
+
+                    <button onclick="assignSubjectToExam()" type="button" class="btn btn-primary">Submit</button>
+                </form>
+                <p id="severResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ASSIGN QUESTIONS TO SUBJECT MODAL -->
+<div class="modal fade" id="questionsModal">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="heading" id="subjectName"></h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <small class="text-danger" id="countOfTotalQuestions"></small>
+                <div class="mt-3 alert" id="dynamicQuestionsDiv" style="background-color: #F2F2F2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/instructor.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function assignSubjectToExam() {
+        if ($("#subjectsForm").valid()) {
+            let examID = localStorage.getItem('examID')
+            let numberOfQuestion = parseInt(document.getElementById('numberOfQuestion').value)
+            let subjectID = document.getElementById('subjectsOption').value
+
+            if (numberOfQuestion < 10) {
+                document.getElementById('severResponse').className = 'mt-3 alert alert-danger'
+                document.getElementById('severResponse').innerText = 'Number of Question (Minimum 10 & Maximum 20)'
+            } else if (numberOfQuestion > 20) {
+                document.getElementById('severResponse').className = 'mt-3 alert alert-danger'
+                document.getElementById('severResponse').innerText = 'Number of Question (Minimum 10 & Maximum 20)'
+            } else {
+                document.getElementById('severResponse').className = ''
+                document.getElementById('severResponse').innerText = ''
+
+                fetch(`/assign-subject-to-exam/${subjectID}/${numberOfQuestion}/${examID}`).then(res => res.text()).then(data => {
+                    if (data === 'Success') {
+                        document.getElementById('severResponse').className = 'mt-3 alert alert-success'
+                        document.getElementById('severResponse').innerText = 'Subject is assigned to this exam successfully.'
+                        setTimeout(() => {
+                            document.getElementById('severResponse').className = ''
+                            document.getElementById('severResponse').innerText = ''
+                            $('#subjectsModal').modal('hide')
+                            fetchExams()
+                        }, 2500)
+                    } else {
+                        document.getElementById('severResponse').className = 'mt-3 alert alert-danger'
+                        document.getElementById('severResponse').innerText = data
+                    }
+                })
+            }
+        }
+    }
+
+    window.addEventListener('load', () => {
+        getCourseAndSubjects()
+        fetchExams()
+    })
+
+    function fetchExams() {
+        fetch('/exams-data-view').then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                renderExamsData(rows)
+            }
+        })
+    }
+
+    function renderExamsData(rows) {
+        let tableRows = `
+            <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Exam Details</th>
+                <th>Instructions</th>
+                <td></td>
+            </tr>
+            </thead>
+            <tbody>`;
+
+        rows.forEach((row, i) => {
+            let {examID, date, examCode, examName, instructions, total_time_in_minutes, subjects} = row
+            tableRows += `
+                    <tr>
+                        <td style="vertical-align: middle">${++i}</td>
+                        <td>
+                        <b>Title</b>: <span style="font-weight: 700">${examName}</span> <br>
+                        <b>Code</b>: ${examCode} <br>
+                        <b>Date</b>: ${date.split('T')[0]} <br>
+                        <b>Total Time</b>: ${convertMinutesToTime(total_time_in_minutes)}
+                        ${subjects.length > 0 ? '<hr><b>Subject</b>: ' + renderSubjectOnly(subjects) : ''}
+                        </td>
+                        <td>${instructions}</td>
+                        <td style="width: 200px">
+                            <button type="button" class="btn btn-danger btn-sm w-100 mb-3" onclick="deleteExam(${examID})"><i class="fa fa-trash-alt"></i> Delete</button>
+                            <button type="button" class="btn btn-success btn-sm w-100" onclick="showAssignSubjectsModal(${examID}, '${examName}')"><i class="fa fa-book-open"></i> Assign Subjects</button>
+                            ${subjects.length > 0 ? renderAssignQuestionsToExamButton(subjects, examID) : ''}
+                        </td>
+                    </tr>`;
+        });
+        tableRows += `
+            </tbody>
+            </table>`
+        document.getElementById("dynamicExamsData").innerHTML = tableRows;
+    }
+
+    function renderAssignQuestionsToExamButton(subjects, examID) {
+        let html = ``
+        for (let subject of subjects) {
+            let {id, sID, sName, total_number_of_questions} = subject
+            html += `<button type="button" onclick="fetchQuestionOfThisSubject(${sID}, '${sName}', ${total_number_of_questions}, ${id})" class="btn btn-sm btn-outline-secondary w-100 mt-3">Assign ${sName} <br> Questions To Exam</button>`
+        }
+        return html
+    }
+
+    function fetchQuestionOfThisSubject(sID, sName, total_number_of_questions, assignedSubjectToExamID) {
+        fetch('/question-view/' + sID).then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                localStorage.setItem('total_number_of_questions', JSON.stringify({sName, total_number_of_questions}))
+                document.getElementById('countOfTotalQuestions').innerText = `*Number of Questions: ${total_number_of_questions}`
+                document.getElementById('subjectName').innerText = `Assign ${sName} Questions To Exam`
+                renderDynamicQuestion(rows, sName, assignedSubjectToExamID)
+            }
+        })
+    }
+
+    function renderDynamicQuestion(rows, sName, assignedSubjectToExamID) {
+        rows.sort((a, b) => a.marks - b.marks);
+        let html = `<form id="questionsForm">`
+        rows.forEach((row, i) => {
+            let {qid, question, marks} = row
+            html += `
+            <div>
+                <input type="checkbox" name="questionsCheckBox" id="question${qid}" value="${qid}">
+                <label for="question${qid}">${question}</label>
+                (${marks === 1 ? '1 mark' : marks + ' marks'})
+            </div>
+            `
+        })
+        html += `
+            <hr>
+            <button type="button" onclick="saveAllQuestion('${sName}', ${assignedSubjectToExamID})" class="btn btn-sm btn-primary">Submit</button>
+            </form>
+            <p id="messages"></p>`
+        document.getElementById('dynamicQuestionsDiv').innerHTML = html
+        $('#questionsModal').modal('show')
+    }
+
+    function saveAllQuestion(subjectName, assignedSubjectToExamID) {
+        let anyQuestionSelected = false;
+        let questionIDArray = []
+        let controls = document.getElementById('questionsForm').elements
+        for (let control of controls) {
+            if (control.type !== 'button') {
+                if (control.checked) {
+                    questionIDArray.push(control.value)
+                    anyQuestionSelected = true
+                    document.getElementById('messages').className = ''
+                    document.getElementById('messages').innerText = ''
+                }
+            }
+        }
+
+        if (!anyQuestionSelected) {
+            document.getElementById('messages').className = 'mt-3 alert alert-danger'
+            document.getElementById('messages').innerText = 'Please select questions for this exam.'
+            return false
+        }
+
+        let questions = JSON.parse(localStorage.getItem('total_number_of_questions'))
+        let {sName, total_number_of_questions} = questions
+
+        if (questionIDArray.length !== total_number_of_questions) {
+            document.getElementById('messages').className = 'mt-3 alert alert-danger'
+            document.getElementById('messages').innerText = `Please select total ${total_number_of_questions} questions.`
+            return false
+        }
+
+        fetch(`/assign-subject-questions-to-exam`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({assignedSubjectToExamID: assignedSubjectToExamID, questionIDArray: questionIDArray})
+        }).then(res => res.text()).then(data => {
+            if (data === 'success') {
+                document.getElementById('messages').className = 'mt-3 alert alert-success'
+                document.getElementById('messages').innerText = 'Questions assigned to this exam successfully.'
+                setTimeout(() => {
+                    document.getElementById('messages').className = ''
+                    document.getElementById('messages').innerText = ''
+                    $('#questionsModal').modal('hide')
+                }, 2500)
+            } else {
+                document.getElementById('messages').className = 'mt-3 alert alert-danger'
+                document.getElementById('messages').innerText = data
+            }
+        })
+
+    }
+
+    function deleteExam(examID) {
+        if (confirm('Are you sure to delete this exam?')) {
+            fetch(`/exams/${examID}`, {method: 'DELETE'}).then(res => res.text()).then(data => {
+                if (data === 'Success') {
+                    alert('Exam deleted successfully.')
+                    fetchExams()
+                } else {
+                    alert(data)
+                }
+            })
+        }
+    }
+
+    function renderSubjectOnly(subjects) {
+        let html = ``
+        subjects.forEach((subject, i) => {
+            if (i === subjects.length - 1) {
+                html += `${subject.sName}`
+            } else {
+                html += `${subject.sName}, `
+            }
+        })
+        return html
+    }
+
+    function showAssignSubjectsModal(examID, examName) {
+        localStorage.setItem('examID', examID)
+        document.getElementById('severResponse').className = ''
+        document.getElementById('severResponse').innerText = ''
+        let instructorSubjects = JSON.parse(localStorage.getItem('instructorSubjects'))
+        let options = `<option value="">Please Select Subject</option>`
+        for (let sub of instructorSubjects) {
+            let {sID, sName} = sub
+            options += `<option value="${sID}">${sName}</option>`
+        }
+        document.getElementById('subjectsOption').innerHTML = options
+        document.getElementById('examTitle').innerText = examName
+        $('#subjectsModal').modal('show')
+    }
+
+    function convertMinutesToTime(minutes) {
+        if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+            return "Invalid input";
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        let hourLabel = "hours";
+        if (hours === 1) {
+            hourLabel = "hour";
+        }
+
+        if (hours === 0) {
+            return `${remainingMinutes} minutes`;
+        } else if (remainingMinutes === 0) {
+            return `${hours} ${hourLabel}`;
+        } else {
+            return `${hours} ${hourLabel} ${remainingMinutes} minutes`;
+        }
+    }
+
+    function getCourseAndSubjects() {
+        fetch('/get-instructors-course-and-subjects').then(res => res.json()).then(data => {
+            let {course, subjects} = data
+            document.getElementById('courseName').innerHTML = `<i class="fa fa-caret-right"></i> ${course}`
+            localStorage.setItem('instructorSubjects', JSON.stringify(subjects))
+            let html = ``
+            for (let subject of subjects) {
+                let {sID, sName} = subject
+                html += `<div><i class="fa fa-caret-right"></i> ${sName}</div>`
+            }
+            document.getElementById('subjectsRadioButton').innerHTML = html
+        })
+    }
+</script>
+
+</body>
+</html>

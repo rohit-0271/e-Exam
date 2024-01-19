@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 pt-5 pb-4">
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Exam Title</th>
+            <th>Code</th>
+            <th>Date</th>
+            <th>Total Time</th>
+            <th>Subject</th>
+            <th>Result</th>
+        </tr>
+        </thead>
+        <tbody id="examDetails"></tbody>
+    </table>
+</div>
+
+<!-- Marks Modal -->
+<div class="modal fade" id="marksModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Gender</th>
+                        <th>Father's Name</th>
+                        <th>Marks</th>
+                        <th>Percentage</th>
+                    </tr>
+                    </thead>
+                    <tbody id="studentMarks"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script src="https://cdn.jsdelivr.net/gh/cosmogicofficial/quantumalert@latest/minfile/quantumalert.js"
+        charset="utf-8"></script>
+
+<script>
+    window.addEventListener('load', () => {
+        viewResults()
+    })
+
+    const viewResults = () => {
+        let URL = '/admin-fetch-results'
+        fetch(URL).then(res => res.json()).then(data => {
+            // console.log(data)
+            let {errorCode, message, rows} = data
+            if (errorCode === 1) {
+                alert(message)
+            } else {
+                renderExams(rows)
+            }
+        })
+    }
+
+    const renderExams = (rows) => {
+        // console.log(rows)
+        let srNo = 1
+        let html = ``
+        for (let row of rows) {
+            html += `<tr>`
+            html += `<td>${srNo}</td>`
+            html += `<td>${row.examName}</td>`
+            html += `<td>${row.examCode}</td>`
+            html += `<td>${row.date.split('T')[0]}</td>`
+            html += `<td>${convertMinutesToTime(row.total_time_in_minutes)}</td>`
+            html += `<td>${row.sName}</td>`
+            html += `<td><button onclick="fetchResults(${row.id})" class="btn btn-sm btn-primary" type="button">View <i class="fa fa-eye"></i></button></td>`
+            html += `</tr>`
+            srNo++
+        }
+        document.getElementById('examDetails').innerHTML = html
+    }
+
+    function fetchResults(examSubjectID) {
+        fetch(`/fetch-students-marks/${examSubjectID}`).then(res => res.json()).then(data => {
+            // console.log(data)
+            let {errorCode, message, rows} = data
+            if (errorCode === 1) {
+                alert(message)
+            } else {
+                if (rows.length > 0) {
+                    renderMarks(rows)
+                } else {
+                    // Qual.warning("Sorry","No Data Found");
+                    Qual.warningdb("Sorry", "No Data Found");
+                }
+            }
+        })
+    }
+
+    function renderMarks(rows) {
+        console.log(rows)
+        let srNo = 1
+        let html = ``
+        for (let row of rows) {
+            let {firstName, lastName, photo, gender, fatherName, obtainedScore, totalScore} = row
+            let percentage = (obtainedScore / totalScore) * 100
+            html += `<tr>`
+            html += `<td style="vertical-align: middle">${srNo}</td>`
+            html += `<td class="text-capitalize"> <img src="${photo}" alt="Photo" style="width: 50px"> ${firstName} ${lastName}</td>`
+            html += `<td style="vertical-align: middle">${gender}</td>`
+            html += `<td style="vertical-align: middle">${fatherName}</td>`
+            html += `<td style="vertical-align: middle">${obtainedScore}/${totalScore}</td>`
+            html += `<td style="vertical-align: middle">${Math.round(percentage * 10) / 10}%</td>`
+            html += `</tr>`
+            srNo++
+        }
+        document.getElementById('studentMarks').innerHTML = html
+        $("#marksModal").modal('show')
+    }
+
+    function convertMinutesToTime(minutes) {
+        if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+            return "Invalid input";
+        }
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        let hourLabel = "hours";
+        if (hours === 1) {
+            hourLabel = "hour";
+        }
+        if (hours === 0) {
+            return `${remainingMinutes} minutes`;
+        } else if (remainingMinutes === 0) {
+            return `${hours} ${hourLabel}`;
+        } else {
+            return `${hours} ${hourLabel} ${remainingMinutes} minutes`;
+        }
+    }
+</script>
+
+</body>
+</html>

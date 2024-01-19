@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Category</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body onload="fetchCourses(); fetchSubjects()" class="body-background">
+
+<header id="header"></header>
+
+<div class="container py-5">
+    <div class="text-end mb-3">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#cModal" class="btn btn-warning">
+            Add New Subject <i class="fa fa-add"></i>
+        </button>
+    </div>
+
+    <table class="table" id="catTable" style="visibility: hidden">
+        <thead>
+        <tr>
+            <th class="bg-dark text-white">#</th>
+            <th class="bg-dark text-white">Course</th>
+            <th class="bg-dark text-white">Subject</th>
+            <th class="bg-dark text-white">Subject&nbsp;Code</th>
+            <th class="bg-dark text-white">Description</th>
+            <th class="bg-dark text-white">Delete</th>
+        </tr>
+        </thead>
+        <tbody id="catData"></tbody>
+    </table>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="cModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-boxes-stacked'></i> Add New Subject</h4>
+                <button class="btn btn-close" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="catForm">
+                    <div class="mb-3">
+                        <label for="courseName">
+                            Select Course<span class="text-danger">*</span>
+                        </label>
+                        <select name="courseName" id="courseName" data-rule-required="true"
+                                class="form-control"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sCode">
+                            Subject Code<span class="text-danger">*</span>
+                        </label>
+                        <input type="text" data-rule-required="true" class="form-control" id="sCode" name="sCode">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sName">
+                            Subject Name<span class="text-danger">*</span>
+                        </label>
+                        <input type="text" data-rule-required="true" class="form-control" id="sName" name="sName">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="logo">
+                            Subject Logo<span class="text-danger">*</span>
+                        </label>
+                        <input type="file" data-rule-required="true" class="form-control" id="logo" name="logo">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sDescription">
+                            Description<span class="text-danger">*</span>
+                        </label>
+                        <textarea data-rule-required="true" class="form-control" id="sDescription"
+                                  name="sDescription"></textarea>
+                    </div>
+
+                    <button type="button" onclick="addNewCategory()" class="btn btn-info w-100">
+                        Add Subject
+                    </button>
+                </form>
+                <p id="catResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function fetchSubjects() {
+        fetch("/subject-view").then((response) => response.json()).then((value) => {
+            if (value.length > 0) {
+                let html = "";
+                value.forEach((row, i) => {
+                    let {courseName, courseLogo, subjects} = row;
+                    html += `<tr>`
+                    html += `<td rowspan="${subjects.length + 1}">${++i}</td>`
+                    html += `<td style="vertical-align: middle" rowspan="${subjects.length + 1}"><img src="${courseLogo}" style="width: 50px" alt=""><br>${courseName}</td>`
+                    html += `</tr>`
+                    for (let subject of subjects) {
+                        html += `<tr>`
+                        html += `<td><img src="${subject.sLogo}" style="width: 50px" alt=""><br>${subject.sName}</td>`
+                        html += `<td>${subject.sCode}</td>`
+                        html += `<td>${subject.sDescription}</td>`
+                        html += `<td onclick="deleteSubject('${subject.sID}')" class="text-center"><i class="fa fa-trash-alt text-danger"></i></td>`
+                        html += `</tr>`
+                    }
+                });
+                document.getElementById("catTable").style.visibility = "visible"
+                document.getElementById("catData").innerHTML = html
+            } else {
+                document.getElementById("catTable").style.visibility = "hidden"
+            }
+        })
+    }
+
+    function deleteSubject(id) {
+        console.log(id)
+        if (confirm('Are you sure to delete?')) {
+            fetch('/subject/' + id, {method: 'DELETE'}).then((response) => response.text()).then((value) => {
+                alert(value);
+                fetchSubjects();
+            });
+        }
+    }
+
+    function addNewCategory() {
+        if ($("#catForm").valid()) {
+            let formControls = document.getElementById("catForm").elements;
+            let formData = new FormData();
+            for (let i = 0; i < formControls.length; i++) {
+                if (formControls[i].type !== "button") {
+                    if (formControls[i].type === "file") {
+                        formData.append(formControls[i].name, formControls[i].files[0])
+                    } else {
+                        formData.append(formControls[i].name, formControls[i].value)
+                    }
+                }
+            }
+            fetch("/subject", {
+                method: "POST",
+                body: formData
+            }).then((response) => response.text()).then((value) => {
+                if (value === "Success") {
+                    alert('Subject added successfully.')
+                    fetchSubjects();
+                    document.getElementById("catForm").reset();
+                    $("#cModal").modal('hide');
+                } else {
+                    alert(value)
+                }
+            });
+        }
+    }
+
+    function renderCoursesHTML(rows) {
+        let html = `<option value="">Please Select Course</option>`;
+        for (let row of rows) {
+            html += `<option value="${row.courseID}">${row.courseName}</option>`;
+        }
+        document.getElementById('courseName').innerHTML = html;
+    }
+
+    function fetchCourses() {
+        fetch('/course-view').then(res => res.json()).then(data => {
+            renderCoursesHTML(data);
+        });
+    }
+</script>
+
+</body>
+</html>

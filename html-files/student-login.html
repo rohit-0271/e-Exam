@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Login</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .blur-background {
+            background-color: rgb(255, 255, 255);
+        }
+
+        label {
+            font-weight: 600;
+        }
+
+        a {
+            text-decoration: none;
+            display: block;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="publicHeader"></header>
+
+<div class="container">
+
+    <div class="parent">
+        <div class="child shadow-lg">
+            <div class="border blur-background px-5 py-3">
+                <div class="text-center">
+                    <img src="e-Exams.png" alt="">
+                    <h4 class="heading">Student Login</h4>
+                </div>
+                <form id="studentLogin" class="mt-5">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="email" class="text">Email<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="email"
+                                       value="subhratosingh@gmail.com"
+                                       class="form-control" id="email" name="email">
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="mb-4">
+                                <label for="password" class="text">Password<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="password"
+                                       value="123"
+                                       class="form-control" id="password" name="password">
+                                <a href="/student-forgot-password">Forgot Password?</a>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button type="reset" class="btn btn-outline-primary w-100">Reset</button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-primary w-100" onclick="studentLogin()">
+                                        Sign in
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="response"></p>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/public.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function studentLogin() {
+        if ($("#studentLogin").valid()) {
+            let email = document.getElementById("email").value
+            let password = document.getElementById("password").value
+            fetch("/student-login", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({email: email, password: password})
+            }).then((response) => response.text()).then((value) => {
+                if (value === "Success") {
+                    document.getElementById("studentLogin").reset();
+                    // window.location.href = "/thirdpage";
+                    window.location.href = "/student-dashboard";
+                } else {
+                    document.getElementById("response").className = 'mt-3';
+                    document.getElementById("response").style.color = 'red';
+                    document.getElementById("response").style.fontWeight = 'bold';
+                    document.getElementById("response").innerHTML = '*' + value;
+                }
+            })
+        }
+    }
+</script>
+</body>
+</html>

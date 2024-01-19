@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Exams</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .upcoming-exams-row {
+            border-radius: 10px;
+        }
+
+        .upcoming-exams-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-3">
+    <h2>EXAMS</h2>
+    <hr>
+    <div class="table-responsive" id="dynamicExamsDataDiv"></div>
+</div>
+
+<!-- EXAM MODAL -->
+<div class="modal fade" id="examModal">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info-subtle">
+                <h5 class="modal-title">Exam Started</h5>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 offset-md-3">
+                        <h4 class="heading" id="modalLabel"></h4>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6><small class="heading">Total Time:</small> <span id="totalTime"></span></h6>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><small class="heading">Remaining Time:</small> <span id="countdown"></span></h6>
+                            </div>
+                            <div class="col-md-4">
+                                <h6><small class="heading">Total Question:</small> <span id="totalQuestions"></span>
+                                </h6>
+                            </div>
+                        </div>
+
+                        <div class="row mt-5 shadow">
+                            <div class="col-md-12 p-3 bg-light" id="questionsDiv"
+                                 style="background-color: #F2F2F2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/student.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function getQuestionsArrayFromLocalStorage() {
+        return JSON.parse(localStorage.getItem('startedExamDetails'))
+    }
+
+    function showNextQuestion() {
+        let data = getQuestionsArrayFromLocalStorage()
+        renderQuestionsInModal(data.questionsArray)
+    }
+
+    window.addEventListener('load', () => {
+        upcomingExams() // fetch upcoming exams of this student
+
+        /*
+        Check user refreshed the web page,
+        if refreshed, then open exam modal
+        */
+        let startedExamDetails = localStorage.getItem('startedExamDetails')
+        if (startedExamDetails) {
+            startedExamDetails = JSON.parse(startedExamDetails)
+            let {examSubjectID, total_time_in_minutes, examName, sName} = startedExamDetails
+            startExamNow(examSubjectID, total_time_in_minutes, examName, sName)
+        }
+    })
+
+    function upcomingExams() {
+        fetch('/upcoming-exams').then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                renderUpcomingExams(rows)
+            }
+        })
+    }
+
+    function renderUpcomingExams(rows) {
+        let isAnyExam = false
+        let isNumberOfQuestionEqual = false
+        let html = `
+                    <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Exam</th>
+                            <th>Code</th>
+                            <th>Total&nbsp;Time</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Instructions</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    `
+        rows.forEach((row, i) => {
+            let {isExamAlreadyGiven, exams, number_of_question_assigned_to_exam} = row
+            if ((!isExamAlreadyGiven) && exams.length > 0 && number_of_question_assigned_to_exam.length > 0) {
+                isAnyExam = true
+                let {
+                    id,
+                    examID,
+                    subjectID,
+                    date,
+                    examCode,
+                    examName,
+                    instructions,
+                    total_time_in_minutes,
+                    sName,
+                    total_number_of_questions
+                } = exams[0]
+                if (number_of_question_assigned_to_exam.length > 0) {
+                    if (number_of_question_assigned_to_exam[0].questions.split(',').length === total_number_of_questions) {
+                        isNumberOfQuestionEqual = true
+                    }
+                }
+                html += `
+                        <tr>
+                        <td>${++i}</td>
+                        <td>${examName}</td>
+                        <td>${examCode}</td>
+                        <td>${convertMinutesToTime(total_time_in_minutes)}</td>
+                        <td>${sName}</td>
+                        <td>${date}</td>
+                        <td>${instructions}</td>
+                        <td>${renderStartExamButton(id, date, isNumberOfQuestionEqual, total_time_in_minutes, examName, sName)}</td>
+                        </tr>
+                        `
+            }
+        })
+        html += `</tbody></table>`
+
+        if (isAnyExam) {
+            document.getElementById('dynamicExamsDataDiv').innerHTML = html
+        } else {
+            document.getElementById('dynamicExamsDataDiv').innerHTML = '<div class="border border-light p-3 upcoming-exams-row bg-light"><h5 class="text-danger">*No upcoming exams</h5></div>'
+        }
+
+    }
+
+    function renderStartExamButton(id, date, isNumberOfQuestionEqual, total_time_in_minutes, examName, sName) {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        let month = (currentDate.getMonth() + 1).toString().padStart(2, '0')
+        let day = currentDate.getDate().toString().padStart(2, '0')
+        if (date === `${year}-${month}-${day}` && isNumberOfQuestionEqual) {
+            return `<button type="button" onclick="startExamNow(${id}, ${total_time_in_minutes}, '${examName}', '${sName}')" class="btn btn-success btn-sm">Start Exam</button>`
+        } else {
+            return ''
+            // return `<b class="text-danger">coming soon</b>`
+        }
+    }
+
+    function startExamNow(examSubjectID, total_time_in_minutes, examName, sName) {
+        fetch('/get-exam-questions/' + examSubjectID).then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (!error) {
+                /* show details in modal [ Modal Title / No. of Total Questions / Total Time ] */
+                document.getElementById('modalLabel').innerText = `${sName} | ${examName}` // Modal Title
+                document.getElementById('totalQuestions').innerText = rows.length // Total Questions
+                document.getElementById('totalTime').innerText = convertMinutesToTime(total_time_in_minutes) // Total Time
+
+                renderQuestionsInModal(rows)
+                $("#examModal").modal("show") // open modal
+
+                /* save details in local storage */
+                localStorage.setItem('startedExamDetails', JSON.stringify({
+                        examSubjectID: examSubjectID,
+                        total_time_in_minutes: total_time_in_minutes,
+                        examName: examName,
+                        sName: sName,
+                        questionsArray: rows
+                    })
+                )
+
+                startTimer(total_time_in_minutes); // start the exam timer
+            }
+        })
+    }
+
+    function renderQuestionsInModal(rows) {
+        let questionCounter;
+        if (!localStorage.getItem('questionCounter')) {
+            questionCounter = 0
+        } else {
+            questionCounter = parseInt(localStorage.getItem('questionCounter'))
+        }
+        let currentQuestionNumber = questionCounter + 1
+
+        document.getElementById('questionsDiv').innerHTML = `
+                                                             <h5>Question ${currentQuestionNumber} (${rows[questionCounter]['marks']} marks)</h5>
+                                                             <label>${rows[questionCounter]['question']}</label>
+                                                             <div class="mt-2 mb-4">
+                                                             <input type="radio" name="questionOptions" id="${rows[questionCounter]['option_a']}" value="${rows[questionCounter]['option_a']}"> <label for="${rows[questionCounter]['option_a']}">${rows[questionCounter]['option_a']}</label> <br>
+                                                             <input type="radio" name="questionOptions" id="${rows[questionCounter]['option_b']}" value="${rows[questionCounter]['option_b']}"> <label for="${rows[questionCounter]['option_b']}">${rows[questionCounter]['option_b']}</label> <br>
+                                                             <input type="radio" name="questionOptions" id="${rows[questionCounter]['option_c']}" value="${rows[questionCounter]['option_c']}"> <label for="${rows[questionCounter]['option_c']}">${rows[questionCounter]['option_c']}</label> <br>
+                                                             <input type="radio" name="questionOptions" id="${rows[questionCounter]['option_d']}" value="${rows[questionCounter]['option_d']}"> <label for="${rows[questionCounter]['option_d']}">${rows[questionCounter]['option_d']}</label> <br>
+                                                             <span id="warningMessage"></span>
+                                                             </div>
+                                                             <button type="button" class="btn btn-primary" onclick="submitAnswer(${questionCounter}, ${rows.length - 1})">Next Questions</button>
+                                                             `
+    }
+
+    function submitAnswer(questionCounter, numOfQuestion) {
+        let isOptionSelected = false
+        let selectedValue = ""
+        let radioButtons = document.getElementsByName("questionOptions")
+        for (let i = 0; i < radioButtons.length; i++) {
+            if (radioButtons[i].checked) {
+                isOptionSelected = true
+                selectedValue = radioButtons[i].value
+                break
+            }
+        }
+
+        if (!isOptionSelected) {
+            document.getElementById('warningMessage').className = 'text-danger'
+            document.getElementById('warningMessage').innerText = '*Please select answer'
+        } else {
+            document.getElementById('warningMessage').className = ''
+            document.getElementById('warningMessage').innerText = ''
+
+            let examObj = getQuestionsArrayFromLocalStorage()
+            let questionsArray = examObj.questionsArray
+            let currentQuestion = questionsArray[questionCounter]
+            let {subjectID, qid, option_a, option_b, option_c, option_d, correct_answer, marks} = currentQuestion
+            correct_answer = correct_answer.toLowerCase()
+            let correctValue = currentQuestion[`option_${correct_answer}`]
+
+            /* check answer is correct or not */
+            if (selectedValue === correctValue) {
+                saveScoreInLocalStorage(marks, true)
+            } else {
+                saveScoreInLocalStorage(marks, false)
+            }
+
+            if (questionCounter < numOfQuestion) {
+                questionCounter += 1
+                localStorage.setItem('questionCounter', questionCounter.toString())
+                showNextQuestion()
+            } else {
+                // exam complete logic
+                examOver()
+            }
+        }
+    }
+
+    function examOver() {
+        let {examSubjectID, questionsArray} = JSON.parse(localStorage.getItem('startedExamDetails'))
+
+        let totalScore = 0
+        for (let question of questionsArray) {
+            // console.log(question)
+            totalScore += question.marks
+        }
+        // console.log(totalScore)
+
+        // let totalScore = parseFloat(localStorage.getItem('totalScore'))
+        let obtainedScore = !localStorage.getItem('examScore') ? 0 : parseFloat(localStorage.getItem('examScore'))
+
+        fetch('/save-result', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({examSubjectID, totalScore, obtainedScore})
+        }).then(res => res.text()).then(data => {
+            if (data === 'success') {
+                Qual.successdb("Congratulations!", "You have completed the exam.");
+                $("#examModal").modal('hide')
+                removeValuesFromLocalStorage()
+                upcomingExams()
+            } else {
+                // alert(data)
+                Qual.errordb("Error", data);
+            }
+        })
+    }
+
+    function removeValuesFromLocalStorage() {
+        localStorage.removeItem('startedExamDetails')
+        localStorage.removeItem('questionCounter')
+        localStorage.removeItem('examStartTime')
+        localStorage.removeItem('totalScore')
+        localStorage.removeItem('examScore')
+    }
+
+    function saveScoreInLocalStorage(marks, isTrueAnswer) {
+        let totalScore = localStorage.getItem('totalScore')
+        if (!totalScore) {
+            localStorage.setItem('totalScore', marks.toString())
+        } else {
+            totalScore = parseFloat(totalScore)
+            totalScore += marks
+            localStorage.setItem('totalScore', totalScore.toString())
+        }
+
+        let examScore = localStorage.getItem('examScore')
+        if (!examScore) {
+            localStorage.setItem('examScore', (isTrueAnswer ? marks.toString() : 0))
+        } else {
+            examScore = parseFloat(examScore)
+            if (isTrueAnswer) {
+                examScore += marks
+            }
+            localStorage.setItem('examScore', examScore.toString())
+        }
+    }
+
+    function startTimer(total_time_in_minutes) {
+        let examDuration = total_time_in_minutes * 60 // Convert minutes into seconds
+        const countdownElement = document.getElementById('countdown');
+        let startTime = localStorage.getItem('examStartTime');
+        if (!startTime) {
+            // If there's no stored start time, it's a fresh start
+            startTime = Math.floor(Date.now() / 1000); // Get current time in seconds
+            localStorage.setItem('examStartTime', startTime.toString());
+        } else {
+            // Calculate the remaining time based on the stored start time
+            const currentTime = Math.floor(Date.now() / 1000);
+            examDuration = examDuration - (currentTime - startTime);
+        }
+
+        const interval = setInterval(updateTimer, 1000); // Update every second
+
+        function updateTimer() {
+            const hours = Math.floor(examDuration / 3600);
+            const minutes = Math.floor((examDuration % 3600) / 60);
+            const seconds = examDuration % 60;
+
+            countdownElement.textContent = `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            // countdownElement.textContent = `${hours < 10 ? '0' : ''}${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+            if (examDuration <= 0) {
+                clearInterval(interval);
+                // alert('Time is up! Your exam will be submitted.');
+                examOver() // You can add code here to auto-submit the exam
+                // localStorage.removeItem('examStartTime'); // Clear the start time after the exam is finished
+            } else {
+                examDuration--;
+            }
+        }
+
+        updateTimer(); // Call once to display initial time
+    }
+
+    function returnTime() {
+        const now = new Date();
+        // Get the current hours, minutes, and seconds
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        return `${hours}:${minutes}:${seconds}`
+    }
+
+    function convertMinutesToTime(minutes) {
+        if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+            return "Invalid input";
+        }
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        let hourLabel = "hours";
+        if (hours === 1) {
+            hourLabel = "hour";
+        }
+        if (hours === 0) {
+            return `${remainingMinutes} minutes`;
+        } else if (remainingMinutes === 0) {
+            return `${hours} ${hourLabel}`;
+        } else {
+            return `${hours} ${hourLabel} ${remainingMinutes} minutes`;
+        }
+    }
+</script>
+
+</body>
+</html>

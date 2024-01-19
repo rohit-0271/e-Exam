@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Course</title>
+  <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body class="body-background" onload="fetchData()">
+
+<header id="header"></header>
+
+<div class="container py-5">
+  <div class="text-end mb-3">
+    <button type="button" data-bs-toggle="modal" data-bs-target="#cModal" class="btn btn-warning">
+      Add New Course <i class="fa fa-add"></i>
+    </button>
+  </div>
+
+  <table class="table table-striped text-center" id="catTable" style="visibility: hidden">
+    <thead>
+    <tr>
+      <th class="bg-dark text-white">#</th>
+      <th class="bg-dark text-white">Course&nbsp;Logo</th>
+      <th class="bg-dark text-white">Course Name</th>
+      <th class="bg-dark text-white">Description</th>
+      <th class="bg-dark text-white">Delete</th>
+    </tr>
+    </thead>
+    <tbody id="catData"></tbody>
+  </table>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="cModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="heading"><i class='fa fa-boxes-stacked'></i> Add New Course</h4>
+        <button class="btn btn-close" type="button" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="courseForm">
+          <div class="mb-3">
+            <label for="name">
+              Course Name<span class="text-danger">*</span>
+            </label>
+            <input type="text" data-rule-required="true" class="form-control" id="name" name="name">
+          </div>
+
+          <div class="mb-3">
+            <label for="logo">
+              Subject Logo<span class="text-danger">*</span>
+            </label>
+            <input type="file" data-rule-required="true" class="form-control" id="logo" name="logo">
+          </div>
+
+          <div class="mb-3">
+            <label for="description">
+              Description<span class="text-danger">*</span>
+            </label>
+            <textarea data-rule-required="true" class="form-control" id="description" name="description"></textarea>
+          </div>
+
+          <button type="button" onclick="courseForm()" class="btn btn-info w-100">
+            Add Course
+          </button>
+        </form>
+        <p id="catResponse"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+  function courseForm () {
+    if ($("#courseForm").valid()) {
+      let formControls = document.getElementById("courseForm").elements;
+      let formData = new FormData();
+      for (let i = 0; i < formControls.length; i++) {
+        if (formControls[i].type !== "button") {
+          if(formControls[i].type === "file") {
+            formData.append(formControls[i].name, formControls[i].files[0])
+          } else {
+            formData.append(formControls[i].name, formControls[i].value)
+          }
+        }
+      }
+      fetch("/course", {
+        method: "POST",
+        body: formData
+      }).then((response) => response.text()).then((value) => {
+        console.log(value)
+        alert(value);
+        fetchData();
+        document.getElementById("courseForm").reset();
+        $("#cModal").modal('hide');
+      });
+    }
+  }
+
+  function fetchData() {
+    fetch("/course-view").then((response) => response.json()).then((value) => {
+      // console.log(value.length)
+      if (value.length > 0) {
+        let tableRows = "";
+        value.forEach((row, i) => {
+          tableRows += "<tr>"
+          tableRows += "<td>" + (++i) + "</td>"
+          tableRows += "<td>"
+          tableRows += "<img src='" + row.courseLogo + "' alt='" + row.courseName + "' style='width: 50px'> <br>"
+          tableRows += "</td>"
+          tableRows += "<td>"
+          tableRows += row.courseName
+          tableRows += "</td>"
+          tableRows += "<td>" + row.courseDescription + "</td>"
+          tableRows += "<td onclick='deleteCourse(" + JSON.stringify(row.courseID) + ")'><i class='fa fa-trash-alt text-danger'></i></td>"
+          tableRows += "</tr>"
+        });
+        document.getElementById("catTable").style.visibility = "visible";
+        document.getElementById("catData").innerHTML = tableRows;
+      } else {
+        document.getElementById("catTable").style.visibility = "hidden";
+      }
+    })
+  }
+
+  function deleteCourse(id) {
+    if (confirm('Are you sure to delete?')) {
+      fetch('/course/' + id, {method: 'DELETE'}).then((response) => response.text()).then((value) => {
+        alert(value);
+        fetchData();
+      });
+    }
+  }
+
+</script>
+
+</body>
+</html>

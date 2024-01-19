@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login | Online Examination System</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <!--    <link rel="stylesheet" href="/fa/css/all.css">-->
+    <!--    <link rel="stylesheet" href="/global.css">-->
+    <style>
+        body {
+            background-image: linear-gradient(#1CD7E8, #0C3EAD);
+        }
+
+        .blur-background {
+            background-color: rgb(255, 255, 255);
+        }
+
+        label {
+            font-weight: 600;
+        }
+
+        a {
+            text-decoration: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<header id="publicHeader"></header>
+
+<div class="container">
+
+    <div class="parent">
+        <div class="child shadow-lg">
+            <div class="border blur-background px-5 py-3">
+                <div class="text-center">
+                    <img src="e-Exams.png" alt="">
+                    <h4 class="heading">Admin Login</h4>
+                </div>
+                <form id="admin-login" class="mt-5">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="lname" class="text">Username</label>
+                                <input data-rule-required="true" data-msg-required="*Enter username" type="text"
+                                       class="form-control"
+                                       id="lname" value="admin"
+                                       name="inst_name">
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="mb-4">
+                                <label for="lpassword" class="text">Password</label>
+                                <input data-rule-required="true" data-msg-required="*Incorrect password" type="password"
+                                       class="form-control" id="lpassword" name="email" value="123">
+                                <a href="/admin-forgot-password">Forgot Password?</a>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-6">
+                                    <button type="reset" class="btn btn-outline-primary w-100">Reset</button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-primary w-100" onclick="login()">Sign in
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="response"></p>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!--<script src="/js/bootstrap.js"></script>-->
+<!--<script src="/jquery.min.js"></script>-->
+<!--<script src="/dist/jquery.validate.js"></script>-->
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/public.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function login() {
+        if ($("#admin-login").valid()) {
+            let username = document.getElementById("lname").value
+            let password = document.getElementById("lpassword").value
+            fetch("/admin-login", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username: username, password: password})
+            }).then((response) => response.text()).then((value) => {
+                if (value === "Success") {
+                    document.getElementById("admin-login").reset();
+                    window.location.href = "/admin-dashboard";
+                } else {
+                    document.getElementById("response").className = 'mt-3';
+                    document.getElementById("response").style.color = 'red';
+                    document.getElementById("response").style.fontWeight = 'bold';
+                    document.getElementById("response").innerHTML = '*' + value;
+                }
+            })
+        }
+    }
+</script>
+
+</body>
+</html>
+
+
+

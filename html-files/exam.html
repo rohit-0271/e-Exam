@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Set New Exams</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .label {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        textarea[disabled] {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        form label, b {
+            color: #0828A3;
+            font-weight: 500;
+        }
+
+        .questions-row {
+            background: #e3e3e37d;
+            border-radius: 10px;
+        }
+
+        .questions-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-5">
+
+    <div class="row">
+
+        <div class="col-md-3">
+            <div class="mb-4 alert alert-info shadow">
+                <span class="label">Course</span>
+                <h5 id="courseName"><i class="fa fa-spinner"></i></h5>
+            </div>
+
+            <div class="alert alert-primary shadow">
+                <span class="label">Subjects</span>
+                <div id="subjectsRadioButton"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="alert alert-light shadow">
+                <div class="row">
+                    <div class="col-7">
+                        <h5 class="heading">Set New Exam</h5>
+                    </div>
+
+                    <div class="col-5 text-end">
+                        <a href="/exams-view" class="btn btn-primary">View Exams</a>
+                    </div>
+                </div>
+
+                <hr>
+                <form id="exams">
+                    <div class="row">
+                        <div class="mb-3 col-md-8">
+                            <label for="examName">Exam Name<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" data-rule-required="true"
+                                    id="examName" name="examName">
+                        </div>
+
+                        <div class="mb-3 col-md-4">
+                            <label for="examCode">Exam Code<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" data-rule-required="true" id="examCode"
+                                   name="examCode">
+                        </div>
+
+                        <div class="mb-3 col-md-12">
+                            <label for="instructions">Instructions<span class="text-danger">*</span></label>
+                            <textarea class="form-control" data-rule-required="true" id="instructions"
+                                      name="instructions" placeholder="Write instructions for the exam"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="examDate">Date of Exam<span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" data-rule-required="true" id="examDate"
+                                   name="examDate">
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="totalTime">Total Exam Time (in minutes)<span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" data-rule-required="true" data-rule-number="true"
+                                   maxlength="3" placeholder="e.g. 60"
+                                   id="totalTime" name="totalTime">
+                        </div>
+
+                        <div class="col-md-12">
+                            <hr>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button type="reset" class="btn btn-outline-info w-100">
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button type="button" id="examBTN" onclick="addNewExam()" class="btn btn-info w-100">
+                                Submit
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+                <div id="serverResponse"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- VIEW QUESTIONS MODAL -->
+<div class="modal fade" id="viewExamsModal">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading">Exam Details</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dynamicExamsData"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/instructor.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    window.addEventListener('load', () => {
+        getCourseAndSubjects()
+        let currentDate = new Date()
+        let year = currentDate.getFullYear();
+        let month = (currentDate.getMonth() + 1).toString().padStart(2, '0') // Add leading zero if needed
+        let day = currentDate.getDate().toString().padStart(2, '0') // Add leading zero if needed
+        let formattedDate = year + '-' + month + '-' + day
+        document.getElementById('examName').placeholder = `e.g. Final Exam ${year}`
+        // document.getElementById('examCode').placeholder = `e.g. EXAM${day}${month}${year % 100}`
+        showCurrentDate()
+    })
+
+    function fetchExams() {
+        fetch('/exams-view').then(res => res.json()).then(data => {
+
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                renderExamsData(rows)
+            }
+        })
+    }
+
+    function renderExamsData(rows) {
+        let tableRows = `
+            <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Exam Details</th>
+                <th>Instructions</th>
+                <td></td>
+            </tr>
+            </thead>
+            <tbody>`;
+
+        rows.forEach((row, i) => {
+            let {examID, date, examCode, examName, instructions, instructorID, total_time_in_minutes} = row
+            tableRows += `
+                    <tr>
+                        <td style="vertical-align: middle">${++i}</td>
+                        <td>
+                        <b>Title</b>: <span style="font-weight: 700">${examName}</span> <br>
+                        <b>Code</b>: ${examCode} <br>
+                        <b>Date</b>: ${date.split('T')[0]} <br>
+                        <b>Total Time</b>: ${convertMinutesToTime(total_time_in_minutes)}
+                        </td>
+                        <td>${instructions}</td>
+                         <td>
+                            <button type="button" class="btn btn-danger btn-sm w-100 mb-2"><i class="fa fa-trash-alt"></i></button>
+                            <button type="button" class="btn btn-success btn-sm w-100">Assign Subjects</button>
+                        </td>
+                    </tr>`;
+        });
+        tableRows += `
+            </tbody>
+            </table>`
+        document.getElementById("dynamicExamsData").innerHTML = tableRows;
+    }
+
+    function convertMinutesToTime(minutes) {
+        if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+            return "Invalid input";
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        let hourLabel = "hours";
+        if (hours === 1) {
+            hourLabel = "hour";
+        }
+
+        if (hours === 0) {
+            return `${remainingMinutes} minutes`;
+        } else if (remainingMinutes === 0) {
+            return `${hours} ${hourLabel}`;
+        } else {
+            return `${hours} ${hourLabel} ${remainingMinutes} minutes`;
+        }
+    }
+
+    function showCurrentDate() {
+        let currentDate2 = new Date()
+        currentDate2.setDate(currentDate2.getDate() + 7); // add 7 days in current date
+        let year2 = currentDate2.getFullYear();
+        let month2 = (currentDate2.getMonth() + 1).toString().padStart(2, '0')
+        let day2 = currentDate2.getDate().toString().padStart(2, '0')
+        let formattedDate2 = year2 + '-' + month2 + '-' + day2
+        document.getElementById('examCode').placeholder = `e.g. EXAM${day2}${month2}${year2 % 100}`
+        document.getElementById('examDate').value = formattedDate2
+        document.getElementById('examDate').min = formattedDate2
+    }
+
+    function addNewExam() {
+        if ($("#exams").valid()) {
+            let formControls = document.getElementById("exams").elements
+            let formData = new FormData();
+            for (let i = 0; i < formControls.length; i++) {
+                if (formControls[i].type !== "button" && formControls[i].type !== "reset") {
+                    formData.append(formControls[i].name, formControls[i].value)
+                }
+            }
+
+            fetch("/exams", {
+                method: "POST", body: formData
+            }).then((response) => response.text()).then((value) => {
+                if (value === 'Success') {
+                    document.getElementById("exams").reset()
+                    document.getElementById("serverResponse").className = 'alert alert-success mt-3'
+                    document.getElementById("serverResponse").innerHTML = 'New exam added successfully.'
+                    showCurrentDate()
+                    setTimeout(() => {
+                        document.getElementById("serverResponse").className = ''
+                        document.getElementById("serverResponse").innerHTML = ''
+                    }, 3000)
+                } else {
+                    document.getElementById("serverResponse").className = 'alert alert-danger mt-3'
+                    document.getElementById("serverResponse").innerHTML = value
+                }
+            })
+
+        }
+    }
+
+    function getCourseAndSubjects() {
+        fetch('/get-instructors-course-and-subjects').then(res => res.json()).then(data => {
+            let {course, subjects} = data
+            document.getElementById('courseName').innerHTML = `<i class="fa fa-caret-right"></i> ${course}`
+
+            let html = ``
+            for (let subject of subjects) {
+                let {sID, sName} = subject
+                html += `<div><i class="fa fa-caret-right"></i> ${sName}</div>`
+            }
+            document.getElementById('subjectsRadioButton').innerHTML = html
+        })
+    }
+</script>
+
+</body>
+</html>

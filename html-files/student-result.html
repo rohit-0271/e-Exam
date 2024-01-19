@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Result</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .upcoming-exams-row {
+            border-radius: 10px;
+        }
+
+        .upcoming-exams-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-3">
+    <h2>RESULTS</h2>
+    <hr>
+    <div class="table-responsive" id="dynamicResultDataDiv"></div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/student.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    window.addEventListener('load', () => {
+        examResults()
+    })
+
+    function examResults() {
+        fetch('/student-result', {method: 'POST'}).then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                renderResults(rows)
+            }
+        })
+    }
+
+    function renderResults(rows) {
+        let html = `
+                    <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Exam</th>
+                            <th class="text-center">Subject</th>
+                            <th>Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    `
+        if (rows.length > 0) {
+            rows.forEach((row, i) => {
+                let {totalScore, obtainedScore, examCode, examName, sName, sLogo} = row
+                let percentage = (obtainedScore / totalScore) * 100
+                html += `
+                        <tr>
+                        <td>${++i}</td>
+                        <td>
+                            <p><b>Title</b>: ${examName}</p>
+                            <p><b>Code</b>: ${examCode}</p>
+                        </td>
+                        <td class="text-center"><img src="${sLogo}" alt="Subject" style="height: 50px"/><br>${sName}</td>
+                        <td>
+                            <p> <i class="fa-solid fa-square-poll-vertical"></i> ${obtainedScore}/${totalScore} (${Math.round(percentage * 10) / 10}%)</p>
+                        </td>
+                        </tr>
+                        `
+            })
+        }
+        html += `</tbody></table>`
+        document.getElementById('dynamicResultDataDiv').innerHTML = html
+    }
+</script>
+
+</body>
+</html>

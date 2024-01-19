@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Admin</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body onload="fetchDataFromServer()" class="body-background">
+
+<header id="header"></header>
+
+<div class="container py-5">
+    <div class="text-end mb-3">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#myModal" class="btn btn-warning">
+            Add Admin <i class="fa fa-add"></i>
+        </button>
+    </div>
+
+   <div class="table-responsive">
+       <table class="table table-striped" id="adminTable" style="visibility: hidden">
+           <thead>
+           <tr>
+               <th class="bg-dark text-white">#</th>
+               <th class="bg-dark text-white">Username</th>
+               <th class="bg-dark text-white">Full Name</th>
+               <th class="bg-dark text-white">Email</th>
+               <th class="bg-dark text-white">User Type</th>
+               <th class="bg-dark text-white">Status</th>
+               <th class="bg-dark text-white" colspan="2">Controls</th>
+
+           </tr>
+           </thead>
+           <tbody id="adminData"></tbody>
+       </table>
+   </div>
+
+</div>
+
+<div class="modal fade" id="myModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-user'></i> Add Admin</h4>
+                <button class="btn btn-close" type="button" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="admin-form">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="uname">Username<span class="text-danger">*</span></label>
+                                <input required data-msg-required="Username is required" type="text"
+                                       class="form-control"
+                                       id="uname" name="username">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name">Full Name<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" data-msg-required="enter fullname" type="text"
+                                       class="form-control" id="name" name="fullname">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password">Password<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" data-msg-required="enter password" type="password"
+                                       class="form-control" id="password"
+                                       name="password">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cpassword">Confirm Password<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" data-msg-required="enter same password"
+                                       data-rule-equalto="#password"
+                                       type="password" class="form-control" id="cpassword">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email">Email<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" data-msg-required="enter email" type="email"
+                                       class="form-control" id="email" name="email">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="usertype">Admin Type<span class="text-danger">*</span></label>
+                                <select data-rule-required="true" class="form-select"
+                                        aria-label="Default select example"
+                                        name="usertype" id="usertype">
+                                    <option value="">Select Type</option>
+                                    <option value="Super Admin">Super Admin</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button type="reset" class="btn btn-outline-info w-100">
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button type="button" onclick="handleForm()" class="btn btn-info w-100">
+                                Submit
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="modal fade" id="updateModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-user'></i> Update Admin Information</h4>
+                <button class="btn btn-close" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminUpdateForm">
+                    <!--                        <input type="hidden" id="adminId">-->
+                    <div class="mb-3">
+                        <label for="uusername">Username</label>
+                        <input data-rule-required="true" type="text" class="form-control" id="uusername"
+                               name="username" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ufullname">Full Name</label>
+                        <input data-rule-required="true" data-msg-required="enter fullname" type="text"
+                               class="form-control" id="ufullname"
+                               name="fullname">
+                    </div>
+                    <div class="mb-3">
+                        <label for="uemail">Email</label>
+                        <input data-rule-required="true" data-msg-required="enter email" type="text"
+                               class="form-control" id="uemail" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="uusertype">Usertype</label>
+                        <select data-rule-required="true" class="form-select" aria-label="Default select example"
+                                name="usertype" id="uusertype">
+                            <option>Admin</option>
+                            <option>Sub-admin</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="updateForm()" class="btn btn-info w-100">
+                        Update Student
+                    </button>
+                </form>
+                <p id="updateResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function handleForm() {
+        $("#admin-form").validate();
+        if ($("#admin-form").valid()) {
+            let formControls = document.getElementById("admin-form").elements;
+            let formData = new FormData();
+            for (let i = 0; i < formControls.length; i++) {
+                if (formControls[i].type !== "button") {
+                    formData.append(formControls[i].name, formControls[i].value)
+                }
+            }
+            fetch("/add-admins", {
+                method: "POST",
+                body: formData
+            }).then((response) => response.text()).then((value) => {
+                console.log(value)
+                alert(value);
+                document.getElementById("admin-form").reset();
+                $("#myModal").modal('hide');
+                fetchDataFromServer();
+            });
+        }
+    }
+
+    function fetchDataFromServer() {
+        fetch("/view-admins").then((response) => response.json()).then((value) => {
+            let {rows, usertype} = value
+            if (rows.length > 0) {
+                let tableRows = "";
+                let i = 0;
+                rows.forEach((row) => {
+                    tableRows += "<tr>"
+                    tableRows += "<td>" + (++i) + "</td>"
+                    tableRows += "<td>" + row.username + "</td>"
+                    tableRows += "<td>" + row.fullname + "</td>"
+                    tableRows += "<td>" + row.email + "</td>"
+                    tableRows += "<td>" + row.usertype + "</td>"
+                    tableRows += "<td>" + row.statusl + "</td>"
+                    tableRows += "<td><button onclick='getValues(" + JSON.stringify(row) + ")' data-bs-target='#updateModal' data-bs-toggle='modal' type='button' class='btn btn-info btn-sm w-100'>Edit <i class='fa fa-edit'></i></button></td><td>"
+
+                    if (usertype === 'Super Admin') {
+                        if (row.statusl === "inactive") {
+                            tableRows += `<button onclick='updateAdminStatus("${row.username}", "active")' type='button' class='btn btn-success btn-sm w-75'>Activate <i class="fa fa-check"></i></button>`
+                        } else {
+                            tableRows += `<button onclick='updateAdminStatus("${row.username}", "inactive")' type='button' class='btn btn-danger btn-sm w-75'>Disable <i class="fa fa-times"></i></button>`
+                        }
+                    }
+
+                    tableRows += "</td></tr>"
+                });
+                document.getElementById("adminTable").style.visibility = "visible";
+                document.getElementById("adminData").innerHTML = tableRows;
+            } else {
+                document.getElementById("adminTable").style.visibility = "hidden";
+            }
+        })
+    }
+
+    function updateForm() {
+        let uusername = document.getElementById("uusername").value;
+        let ufullname = document.getElementById("ufullname").value;
+        let uemail = document.getElementById("uemail").value;
+        let uusertype = document.getElementById("uusertype").value;
+
+        fetch('/update-record/' + uusername, {            //uusername  from let uusername
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({fullname: ufullname, email: uemail, usertype: uusertype})
+        }).then((response) => response.text()).then((value) => {
+            alert(value);
+            $("#updateModal").modal('hide');
+            fetchDataFromServer();
+        });
+    }
+
+
+    function updateAdminStatus(username, status) {
+        // console.log(username, status)
+        fetch(`/delete-admin/${username}/${status}`)
+            .then((response) => response.text())
+            .then((value) => {
+                    alert(value);
+                    fetchDataFromServer();
+                }
+            );
+    }
+
+    function getValues(row) {
+        document.getElementById("uusername").value = row.username;
+        document.getElementById("ufullname").value = row.fullname;
+        document.getElementById("uemail").value = row.email;
+        var str = "";
+        if (row.usertype === "Admin") {
+            str += "<option selected>Admin</option>" +
+                "<option>Sub-admin</option>";
+        } else {
+            str += "<option >Admin</option>" +
+                "<option selected>Sub-admin</option>";
+        }
+        document.getElementById("uusertype").innerHTML = str;
+    }
+</script>
+
+</body>
+</html>

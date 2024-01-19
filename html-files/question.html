@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Questions</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <style>
+        .label {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        textarea[disabled] {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        form label, b {
+            color: #0828A3;
+            font-weight: 500;
+        }
+
+        .questions-row {
+            background: #e3e3e37d;
+            border-radius: 10px;
+        }
+
+        .questions-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background" onload="getCourseAndSubjects();">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-5">
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="mb-4 alert alert-info shadow">
+                <span class="label">Course</span>
+                <h5 id="courseName"><i class="fa fa-spinner"></i></h5>
+            </div>
+
+            <div class="alert alert-primary shadow">
+                <span class="label">Subjects</span>
+                <div id="subjectsRadioButton"></div>
+            </div>
+
+        </div>
+
+        <div class="col-md-9">
+            <div class="alert alert-light shadow">
+                <div class="row">
+                    <div class="col-7">
+                        <h5 class="heading">Add New Question</h5>
+                    </div>
+
+                    <div class="col-5 text-end">
+                        <button disabled id="viewQuestionsBTN" type="button" data-bs-toggle="modal"
+                                onclick="fetchQuestions()"
+                                data-bs-target="#viewQuestionsModal" class="btn btn-primary">
+                            View Questions
+                        </button>
+                    </div>
+                </div>
+                <hr>
+                <form id="questions">
+                    <div class="row">
+                        <div class="mb-3 col-md-12">
+                            <label for="question">Enter Question<span class="text-danger">*</span></label>
+                            <textarea disabled class="form-control" data-rule-required="true"
+                                      rows="4" id="question" name="question"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="option_a">Option A<span class="text-danger">*</span></label>
+                            <textarea disabled class="form-control" data-rule-required="true" id="option_a"
+                                      name="option_a"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="option_b">Option B<span class="text-danger">*</span></label>
+                            <textarea disabled class="form-control" data-rule-required="true" id="option_b"
+                                      name="option_b"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="option_c">Option C<span class="text-danger">*</span></label>
+                            <textarea disabled class="form-control" data-rule-required="true" id="option_c"
+                                      name="option_c"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="option_d">Option D<span class="text-danger">*</span></label>
+                            <textarea disabled class="form-control" data-rule-required="true" id="option_d"
+                                      name="option_d"></textarea>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="correct_answer">Correct Answer<span class="text-danger">*</span></label>
+                            <select disabled data-rule-required="true" class="form-select"
+                                    name="correct_answer" id="correct_answer">
+                                <option value="">Please Select Correct Answer</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3 col-md-6">
+                            <label for="marks">Marks<span class="text-danger">*</span></label>
+                            <select disabled data-rule-required="true" class="form-select"
+                                    name="marks" id="marks">
+                                <option value="">Please Marks</option>
+                                <option value="1">1</option>
+                                <option value="1.5">1.5</option>
+                                <option value="2">2</option>
+                                <option value="2.5">2.5</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <hr>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button disabled type="reset" id="questionResetBTN" class="btn btn-outline-info w-100">
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button disabled type="button" id="questionBTN" onclick="addNewQuestion()"
+                                    class="btn btn-info w-100">
+                                Submit
+                            </button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+                <div id="serverResponse"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- VIEW QUESTIONS MODAL -->
+<div class="modal fade" id="viewQuestionsModal">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><span id="subjectTitle"></span> Questions</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dynamicQuestionsData"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/instructor.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function getCourseAndSubjects() {
+        fetch('/get-instructors-course-and-subjects').then(res => res.json()).then(data => {
+            let {course, subjects} = data
+            document.getElementById('courseName').innerHTML = `<i class="fa fa-caret-right"></i> ${course}`
+
+            let html = ``
+            for (let subject of subjects) {
+                let {sID, sName} = subject
+                html += `<div><input onchange="disableEnableInputFields(${sID}, false)" type="radio" name="instSubjects" id="${sID}" value="${sID}"> <label for="${sID}">${sName}</label></div>`
+            }
+            document.getElementById('subjectsRadioButton').innerHTML = html
+        })
+    }
+
+    function disableEnableInputFields(sID, action) {
+        localStorage.setItem("subjectID", sID)
+        document.getElementById('question').disabled = action
+        document.getElementById('option_a').disabled = action
+        document.getElementById('option_b').disabled = action
+        document.getElementById('option_c').disabled = action
+        document.getElementById('option_d').disabled = action
+        document.getElementById('correct_answer').disabled = action
+        document.getElementById('marks').disabled = action
+        document.getElementById('questionResetBTN').disabled = action
+        document.getElementById('questionBTN').disabled = action
+        document.getElementById('viewQuestionsBTN').disabled = action
+    }
+
+    function addNewQuestion() {
+        if ($("#questions").valid()) {
+            let formControls = document.getElementById("questions").elements
+            let formData = new FormData();
+            for (let i = 0; i < formControls.length; i++) {
+                if (formControls[i].type !== "button") {
+                    formData.append(formControls[i].name, formControls[i].value)
+                }
+            }
+            formData.append('subjectID', localStorage.getItem('subjectID'))
+
+            fetch("/question", {
+                method: "POST",
+                body: formData
+            }).then((response) => response.text()).then((value) => {
+                if (value === 'Success') {
+                    document.getElementById("questions").reset()
+                    document.getElementById("serverResponse").className = 'alert alert-success mt-3'
+                    document.getElementById("serverResponse").innerHTML = 'Question added successfully.'
+                    setTimeout(() => {
+                        document.getElementById("serverResponse").className = ''
+                        document.getElementById("serverResponse").innerHTML = ''
+                    }, 3000)
+                } else {
+                    document.getElementById("serverResponse").className = 'alert alert-danger mt-3'
+                    document.getElementById("serverResponse").innerHTML = value
+                }
+            });
+        }
+    }
+
+    function fetchQuestions() {
+        let subjectID = localStorage.getItem('subjectID')
+        fetch("/question-view/" + subjectID).then((response) => response.json()).then((value) => {
+            let {error, message, rows} = value
+            if (!error) {
+                if (rows.length > 0) {
+                    renderQuestions(rows)
+                }
+            } else {
+                alert(message)
+            }
+        })
+    }
+
+    function renderQuestions(rows) {
+        console.log(rows)
+        let tableRows = ``;
+        rows.forEach((row, i) => {
+            let {qid, question, option_a, option_b, option_c, option_d, correct_answer, marks} = row
+            tableRows += `
+                        <div class="questions-row p-2">
+                            <div class="row">
+                                <div class="col-10"><h5 class="mb-3" style="text-align: justify">Q ${++i}: ${question}</h5></div>
+                                <div class="col-2 text-end">
+                                    <i onclick="deleteQuestion(${qid})" class="fa fa-trash-alt text-danger"></i>
+                                </div>
+                            </div>
+                            <b>Options:</b>
+                            <div class="row">
+                                <div class="col-md-6"><b>A</b>: ${option_a}</div>
+                                <div class="col-md-6"><b>B</b>: ${option_b}</div>
+                                <div class="col-md-6"><b>C</b>: ${option_c}</div>
+                                <div class="col-md-6"><b>D</b>: ${option_d}</div>
+                            </div>
+                             <div class="row mt-3">
+                              <div class="col-md-6"><b>Correct Answer</b>: Option ${correct_answer}</div>
+                              <div class="col-md-6"><b>Marks</b>: ${marks}</div>
+                            </div>
+                       </div>`;
+        });
+        document.getElementById("dynamicQuestionsData").innerHTML = tableRows;
+    }
+
+    function deleteQuestion(id) {
+        fetch('/question/' + id, {method: 'DELETE'}).then((response) => response.text()).then((value) => {
+            alert(value);
+            fetchQuestions();
+        });
+    }
+</script>
+
+</body>
+</html>

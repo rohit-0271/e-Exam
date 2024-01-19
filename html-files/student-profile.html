@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Profile</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body class="body-background" onload="getMyProfileData()">
+
+<header id="header"></header>
+
+<div class="container pt-4 pb-2">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <table class="table">
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <img src="students/avatar.png" alt="Profile" id="profilePhoto" style="height: 200px">
+                    </td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Name</th>
+                    <td style="width: 50%" id="name"></td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Email</th>
+                    <td style="width: 50%" id="email"></td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Mobile</th>
+                    <td style="width: 50%" id="phone"></td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Gender</th>
+                    <td style="width: 50%" id="gender"></td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Father's Name</th>
+                    <td style="width: 50%" id="fatherName"></td>
+                </tr>
+
+                <tr>
+                    <th style="width: 50%" class="text-end">Address</th>
+                    <td style="width: 50%" id="address"></td>
+                </tr>
+
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <button onclick="fetchMyCourseAndSubjects()" type="button" class="btn btn-primary">View Course &
+                            Subjects
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SHOW COURSE & SUBJECT OF STUDENT -->
+<div class="modal fade" id="courseViewModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-line-chart'></i> Courses & Subjects</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="isCourseExistsOrNot"></div>
+                <table class="table" id="catTable">
+                    <thead>
+                    <tr>
+                        <th class="bg-dark text-white">#</th>
+                        <th class="bg-dark text-white">Course</th>
+                        <th class="bg-dark text-white">Subject</th>
+                        <th class="bg-dark text-white">Subject&nbsp;Code</th>
+                    </tr>
+                    </thead>
+                    <tbody id="dynamicSubjectsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/student.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function fetchMyCourseAndSubjects() {
+        fetch('/student-course-subjects').then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if(error) {
+                alert(message)
+            } else {
+                $('#courseViewModal').modal('show')
+                renderCourseAndSubject(rows)
+            }
+        })
+    }
+
+    function renderCourseAndSubject(rows) {
+        let html = "";
+        rows.forEach((row, i) => {
+            let {Course, Selected_Subjects} = row
+            Course = JSON.parse(Course)
+            Selected_Subjects = JSON.parse(Selected_Subjects)
+            html += `<tr>`
+            html += `<td style="vertical-align: middle" rowspan="${Selected_Subjects.length + 1}">${++i}</td>`
+            html += `<td style="vertical-align: middle" rowspan="${Selected_Subjects.length + 1}"><img src="${Course.courseLogo}" style="width: 50px" alt=""><br>${Course.courseName}</td>`
+            html += `</tr>`
+            for (let subject of Selected_Subjects) {
+                let {subject_id, subject_logo, subject_name, subject_code} = subject
+                html += `<tr>`
+                html += `<td><img src="${subject_logo}" style="width: 50px" alt=""><br>${subject_name}</td>`
+                html += `<td style="vertical-align: middle">${subject_code}</td>`
+                html += `</tr>`
+            }
+        });
+        document.getElementById("dynamicSubjectsTable").innerHTML = html
+    }
+
+    function getMyProfileData() {
+        fetch('/student-profile', {method: 'POST'}).then(res => res.json()).then(data => {
+            let {error, message, row} = data
+            if (error) {
+                alert(message)
+            } else {
+                let {photo, address, email, fatherName, firstName, lastName, gender, phone} = row[0];
+                document.getElementById('profilePhoto').src = photo
+                document.getElementById('name').innerHTML = `<spa class="text-capitalize">${firstName} ${lastName}</span>`;
+                document.getElementById('email').innerText = email;
+                document.getElementById('phone').innerText = phone;
+                document.getElementById('gender').innerText = gender;
+                document.getElementById('fatherName').innerText = fatherName;
+                document.getElementById('address').innerText = address;
+            }
+        })
+    }
+</script>
+
+</body>
+</html>

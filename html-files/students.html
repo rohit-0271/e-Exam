@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Student</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+</head>
+<body class="body-background" onload="fetchStudents()">
+
+<header id="header"></header>
+
+<div class="container py-5">
+    <div class="text-end mb-3">
+        <button type="button" data-bs-toggle="modal" data-bs-target="#studentModal" class="btn btn-warning">
+            Add Student <i class="fa fa-add"></i>
+        </button>
+    </div>
+
+    <div id="dynamicStudentsData" class="row"></div>
+</div>
+
+<!-- ADD NEW STUDENT -->
+<div class="modal fade" id="studentModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-user-circle'></i> Update Student</h4>
+                <button class="btn btn-close" type="button" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studentForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="firstName">First Name<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="text" class="form-control"
+                                       id="firstName" name="firstName">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="lastName">Last Name<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="text" class="form-control"
+                                       id="lastName" name="lastName">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="fatherName">Father's Name<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="text" class="form-control"
+                                       id="fatherName" name="fatherName">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="profilePhoto">Profile Photo<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="file" class="form-control"
+                                       id="profilePhoto" name="profilePhoto">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label>Gender<span class="text-danger">*</span></label><br>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" id="male"
+                                           name="gender" value="Male" checked>
+                                    <label class="form-check-label" for="male">Male</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input type="radio" class="form-check-input" id="female"
+                                           name="gender" value="Female">
+                                    <label class="form-check-label" for="female">Female</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email">Email<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" type="email"
+                                       class="form-control" id="email" name="email">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="mobile">Mobile Number<span class="text-danger">*</span></label>
+                                <input data-rule-required="true" maxlength="10" data-rule-number="true"
+                                       type="text" class="form-control"
+                                       id="mobile" name="mobile">
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="address">Address<span class="text-danger">*</span></label>
+                                <textarea class="form-control" data-rule-required="true" id="address"
+                                          name="address"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <button type="reset" class="btn btn-outline-info w-100">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <button type="button" onclick="addNewStudent()" id="addBTN" class="btn btn-info w-100">
+                                    Add Student
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <p id="updatesResponse"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADD COURSE & SUBJECT OF STUDENT -->
+<div class="modal fade" id="courseModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-user-circle'></i> Add Course & Subjects</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="courseSubjectForm">
+                    <div class="mb-3">
+                        <label for="course">Course</label>
+                        <select onchange="fetchSubjects(this.value)" name="course" id="course"
+                                class="form-control"></select>
+                    </div>
+
+                    <div id="subjects"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SHOW COURSE & SUBJECT OF STUDENT -->
+<div class="modal fade" id="courseViewModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="heading"><i class='fa fa-line-chart'></i> Courses & Subjects</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="isCourseExistsOrNot"></div>
+                <table class="table" id="catTable">
+                    <thead>
+                    <tr>
+                        <th class="bg-dark text-white">#</th>
+                        <th class="bg-dark text-white">Course</th>
+                        <th class="bg-dark text-white">Subject</th>
+                        <th class="bg-dark text-white">Subject&nbsp;Code</th>
+                        <th class="bg-dark text-white">Delete</th>
+                    </tr>
+                    </thead>
+                    <tbody id="dynamicSubjectsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="/global.js"></script>
+<script src="/admin.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    function fetchSubjects(course) {
+        if (!course) {
+            document.getElementById('subjects').innerHTML = ''
+        } else {
+            fetch(`/subjects-of-course/${course}`).then(res => res.json()).then(data => {
+                // console.log(data)
+                let optionsHTML = `<div class="mb-3"><label for="subject">Subject</label>`
+                optionsHTML += ` <select data-rule-required="true" name="subject" id="subject" class="form-control">`
+                optionsHTML += `<option value="">Please Select Subject</option>`
+                for (let sub of data) {
+                    let {sID, sName} = sub
+                    optionsHTML += `<option value="${sID}">${sName}</option>`
+                }
+                optionsHTML += `</select></div>`
+                optionsHTML += `<button type="button" class="btn btn-primary" onclick="saveStudentSubjects()">Save Subject</button>`
+                optionsHTML += `<p id="serverResponse"></p>`
+                document.getElementById('subjects').innerHTML = optionsHTML
+            })
+        }
+    }
+
+    function saveStudentSubjects() {
+        if ($('#courseSubjectForm').valid()) {
+            let subjectID = document.getElementById('subject').value
+            let studentID = localStorage.getItem('studentID')
+            fetch(`/student-subjects/${studentID}/${subjectID}`).then(res => res.text()).then(data => {
+                if (data === 'Success') {
+                    document.getElementById('serverResponse').className = 'alert alert-success mt-3'
+                    document.getElementById('serverResponse').innerHTML = 'New subject added successfully.'
+                } else {
+                    document.getElementById('serverResponse').className = 'alert alert-danger mt-3'
+                    document.getElementById('serverResponse').innerHTML = data
+                }
+            })
+        }
+    }
+
+    function saveIDinLocalStorage(studentID) {
+        localStorage.setItem('studentID', studentID);
+        fetchCourses();
+    }
+
+    function fetchCourses() {
+        document.getElementById('subjects').innerHTML = ''
+        fetch('/course-view').then(res => res.json()).then(data => {
+            renderCoursesHTML(data);
+        });
+    }
+
+    function renderCoursesHTML(rows) {
+        let html = `<option value="">Please Select Course</option>`;
+        for (let row of rows) {
+            html += `<option value="${row.courseID}">${row.courseName}</option>`;
+        }
+        document.getElementById('course').innerHTML = html;
+    }
+
+    function addNewStudent() {
+        if ($("#studentForm").valid()) {
+            document.getElementById('addBTN').innerHTML = "<i class='fa fa-spinner'></i> loading...";
+            let formControls = document.getElementById("studentForm").elements;
+            let formData = new FormData();
+
+            for (const control of formControls) {
+                if (control.type !== "button" && control.type !== "reset") {
+                    if (control.type === "radio" || control.type === "checkbox") {
+                        if (control.checked) {
+                            formData.append(control.name, control.value);
+                        }
+                    } else if (control.type === "file") {
+                        formData.append(control.name, control.files[0]);
+                    } else {
+                        formData.append(control.name, control.value);
+                    }
+                }
+            }
+
+            fetch("/student", {
+                method: "POST",
+                body: formData
+            }).then((response) => response.text()).then((value) => {
+                    console.log(value)
+                    document.getElementById('addBTN').innerHTML = "Add Student";
+                    if (value === "Success") {
+                        alert("New student added successfully");
+                        document.getElementById("studentForm").reset();
+                        $("#studentModal").modal('hide');
+                        fetchStudents();
+                    } else {
+                        alert(value);
+                    }
+                }
+            );
+        }
+    }
+
+    function fetchStudents() {
+        fetch('/student-view').then(res => res.json()).then(data => renderStudentsHTML(data))
+    }
+
+    function renderStudentsHTML(rows) {
+        let {message, error, data} = rows;
+        if (!error) {
+            let dynamicData = ``
+            for (let value of data) {
+                let {
+                    address,
+                    email,
+                    fatherName,
+                    firstName,
+                    gender,
+                    id,
+                    lastName,
+                    phone,
+                    photo,
+                    status
+                } = value;
+                dynamicData += `<div class="col-lg-6 students-row">`;
+                dynamicData += `<div class="card bg-light p-3 shadow-lg">`;
+                dynamicData += `<div class="row">`;
+
+                dynamicData += `<div class="col-lg-3 text-center text-lg-start d-lg-flex align-items-lg-center">`;
+                dynamicData += `<img src="${photo}" alt="" class="img-thumbnail" style="width: 120px; height: 120px">`;
+                dynamicData += `</div>`; // col-md-2 ends
+
+
+                dynamicData += `<div class="col-lg-9">`;
+                dynamicData += `<b>Full Name</b>: <span class="text-capitalize">${firstName} ${lastName}</span> &nbsp;&nbsp;`;
+                dynamicData += `${status === 'Active' ? '<span class="badge rounded-pill bg-success">Active</span>' : '<span class="badge rounded-pill bg-danger">Inactive</span>'}`;
+                dynamicData += `<br><b>Email</b>: ${email}<br>`;
+                dynamicData += `<b>Mobile</b>: ${phone}<br>`;
+                dynamicData += `<b>Gender</b>: ${gender} <br>`;
+                dynamicData += `<b>Father's Name</b>: ${fatherName} <br>`;
+                dynamicData += `<p style="height: 40px"><b>Address</b>: ${address}</p>`;
+
+                dynamicData += `<hr><div class="d-flex justify-content-between">`;
+                if (status === 'Active') {
+                    dynamicData += `<button type="button" class="btn btn-sm btn-danger" onclick="updateStudentStatus(${id}, 'Inactive')"><i class="fa fa-times"></i> Disable</button>`;
+                } else {
+                    dynamicData += `<button type="button" class="btn btn-sm btn-success" onclick="updateStudentStatus(${id}, 'Active')"><i class="fa fa-check"></i> Enable</button>`;
+                }
+                dynamicData += `<button type="button" class="btn btn-sm btn-warning" onclick="saveIDinLocalStorage(${id})" data-bs-toggle="modal" data-bs-target="#courseModal"><i class="fa fa-add"></i> Add Course</button>`;
+                dynamicData += `<button type="button" class="btn btn-sm btn-primary" onclick="fetchCoursesOfThisStudent(${id})"><i class="fa fa-add"></i> View Course</button></div>`;
+                dynamicData += `</div>`; // col-md-10 ends
+
+                dynamicData += `</div>`; // row ends
+                dynamicData += `</div>`; // card ends
+                dynamicData += `</div>`;
+            }
+            document.getElementById('dynamicStudentsData').innerHTML = dynamicData
+        }
+    }
+
+    function fetchCoursesOfThisStudent(studentID) {
+        fetch('/student-subjects-fetch/' + studentID).then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                $('#courseViewModal').modal('show')
+                renderCourseAndSubject(rows)
+            }
+        })
+        localStorage.setItem('studentID', studentID)
+    }
+
+    function renderCourseAndSubject(rows) {
+        if(rows.length === 0) {
+            document.getElementById('isCourseExistsOrNot').innerHTML = '<h6 class="text-danger mb-4">*Please add subject.</h6>'
+        } else {
+            document.getElementById('isCourseExistsOrNot').innerHTML = ''
+        }
+
+        let html = "";
+        rows.forEach((row, i) => {
+            let {Course, Selected_Subjects} = row
+            Course = JSON.parse(Course)
+            Selected_Subjects = JSON.parse(Selected_Subjects)
+            html += `<tr>`
+            html += `<td rowspan="${Selected_Subjects.length + 1}">${++i}</td>`
+            html += `<td style="vertical-align: middle" rowspan="${Selected_Subjects.length + 1}"><img src="${Course.courseLogo}" style="width: 50px" alt=""><br>${Course.courseName}</td>`
+            html += `</tr>`
+            for (let subject of Selected_Subjects) {
+                let {subject_id, subject_logo, subject_name, subject_code} = subject
+                html += `<tr>`
+                html += `<td><img src="${subject_logo}" style="width: 50px" alt=""><br>${subject_name}</td>`
+                html += `<td>${subject_code}</td>`
+                html += `<td onclick="deleteSubject('${subject_id}')"><i class="fa fa-trash-alt text-danger"></i></td>`
+                html += `</tr>`
+            }
+        });
+        document.getElementById("dynamicSubjectsTable").innerHTML = html
+    }
+
+    function deleteSubject(subjectID) {
+        if(confirm('Are you sure?')) {
+            let studentID = localStorage.getItem('studentID')
+            fetch(`/student/${studentID}/${subjectID}`, {method: 'DELETE'}).then(res => res.text()).then(data => {
+                if (data === 'Success') {
+                    alert('Subject deleted successfully.')
+                    fetchCoursesOfThisStudent(studentID)
+                } else {
+                    alert(data)
+                }
+            })
+        }
+    }
+
+    function updateStudentStatus(studentID, status) {
+        if (confirm('Are you sure?')) {
+            fetch(`/student-disable/${studentID}/${status}`).then(res => res.json()).then(data => {
+                let {message} = data
+                if (message === 'Success') {
+                    alert('Student disabled.')
+                } else {
+                    alert(message)
+                }
+                fetchStudents();
+            })
+        }
+    }
+</script>
+
+</body>
+</html>

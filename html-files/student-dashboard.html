@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://jqueryui.com/resources/demos/style.css">
+    <style>
+        small {
+            /*color: #0828A3;*/
+            color: #FF914D;
+        }
+
+        .upcoming-exams-row {
+            border-radius: 10px;
+        }
+
+        .upcoming-exams-row:not(:last-child) {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="body-background">
+
+<header id="header"></header>
+
+<div class="container bg-light my-5 p-3 py-sm-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-4 alert alert-info shadow">
+                <h6 class="label">Upcoming Exams</h6>
+                <hr>
+                <div id="upcomingExamsDiv"><i class="fa fa-spinner"></i></div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <h1 class="text-center">
+                Welcome to <strong><span style="color: #FF914D">e</span><span style="color: #38B6FF">-Exams</span></strong>
+            </h1>
+            <br>
+            <hr>
+            <br>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card alert alert-primary text-center">
+                        <h5 class="pt-2"><a href="/student-exams">Exams</a></h5>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card alert alert-success text-center">
+                        <h5 class="pt-2"><a href="/student-result">Results</a></h5>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+<script src="/global.js"></script>
+<script src="/student.js"></script>
+<div id="footerScripts"></div>
+
+<script>
+    window.addEventListener('load', () => {
+        upcomingExams()
+    })
+
+    function upcomingExams() {
+        fetch('/upcoming-exams').then(res => res.json()).then(data => {
+            let {error, message, rows} = data
+            if (error) {
+                alert(message)
+            } else {
+                renderUpcomingExams(rows)
+            }
+        })
+    }
+
+    function renderUpcomingExams(rows) {
+        let isAnyExam = false
+        let html = ``
+        rows.forEach((row, i) => {
+            let {isExamAlreadyGiven, exams, number_of_question_assigned_to_exam} = row
+            // if (exams.length > 0) {
+            if ((!isExamAlreadyGiven) && exams.length > 0 && number_of_question_assigned_to_exam.length > 0) {
+                isAnyExam = true
+                html += `<h3>${exams[0].sName} | ${exams[0].date}</h3>
+                        <div>
+                        <p><small>Exam</small> <br> <i class="fa fa-caret-right"></i> ${exams[0].examName}</p>
+                        <p><small>Exam Code</small> <br> <i class="fa fa-caret-right"></i> ${exams[0].examCode}</p>
+                        <small>Instructions</small> <br> <i class="fa fa-caret-right"></i> ${exams[0].instructions}
+                        </div>`
+                // html += `
+                //         <div class="border border-light p-3 upcoming-exams-row bg-light">
+                //         <small><i class="fa fa-calendar"></i> ${exams[0].date}</small>
+                //         <h5>${exams[0].examName}</h5>
+                //         <small><i class="fa fa-book-open"></i> ${exams[0].sName}</small>
+                //         </div>`
+            }
+        })
+        if (isAnyExam) {
+            document.getElementById('upcomingExamsDiv').innerHTML = html
+            $("#upcomingExamsDiv").accordion();
+        } else {
+            document.getElementById('upcomingExamsDiv').innerHTML = ' <div class="border border-light p-3 upcoming-exams-row bg-light"><h5 class="text-danger">*No upcoming exams</h5></div>'
+        }
+    }
+</script>
+
+</body>
+</html>
